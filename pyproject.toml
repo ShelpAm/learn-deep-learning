@@ -1,0 +1,2 @@
+[tool.pyright]
+extraPaths = ["~/.conda/envs/deep-learning/lib/python3.7/site-packages/"]
