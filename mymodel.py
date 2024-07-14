@@ -16,7 +16,7 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 
-def gen_random_input(n, m, parameters):
+def randomized_samples(n, m, parameters):
     x = np.random.uniform(-100, 100, size=(n, m))
     x = x / np.linalg.norm(x, axis=0, keepdims=True)  # Normalizes x
     y = full_predict(parameters, x)
@@ -26,7 +26,7 @@ def gen_random_input(n, m, parameters):
 
 def randomized_parameters(next_num_features: int, num_features: int):
     w = np.random.uniform(size=(next_num_features, num_features)).T
-    b = np.random.uniform(size=(1, next_num_features))
+    b = np.random.uniform(size=(next_num_features, 1))
     return w, b
 
 
@@ -57,16 +57,18 @@ def forward_propagate(parameters, x):
         w, b = parameters[j]
         x = data[j]
 
+        # Shape of a: (next_num_features, num_examples)
         a = predict(w, b, x)
         data.append(a)
     return data
 
 
-def back_propagate(parameters, data, x, y, learning_rate):
+def back_propagate(parameters, data, y, learning_rate):
     num_layers = len(parameters)
     costs = []
     for j in range(num_layers - 1, -1, -1):
         w, b = parameters[j]
+        x = data[j]
         a = data[j + 1]
 
         (dw, db), cost = propagate(x, y, a)
@@ -81,10 +83,10 @@ def optimize(parameters, x, y, num_iterations, learning_rate):
     print()
     for i in range(num_iterations):
         data = forward_propagate(parameters, x)
-        parameters, costs = back_propagate(parameters, data, x, y, learning_rate)
+        parameters, costs = back_propagate(parameters, data, y, learning_rate)
 
-        peroid = num_iterations // 10
-        if i % peroid == 0:
+        period = num_iterations // 5
+        if i % period == 0:
             print(f"Cost after iteration {i}: {costs[-1]}")
             # print(f"dw: {dw.T}, db: {db}")
 
@@ -92,8 +94,8 @@ def optimize(parameters, x, y, num_iterations, learning_rate):
 
 
 def run_model(
-    training_X,
-    training_Y,
+    training_x,
+    training_y,
     test_X,
     test_Y,
     nums_features: list,
@@ -101,25 +103,19 @@ def run_model(
     learning_rate,
 ):
     num_layers = len(nums_features)
-    nums_features.insert(0, training_X.shape[0])
-    parameters = [
+    nums_features.insert(0, training_x.shape[0])
+    initial_parameters = [
         randomized_parameters(nums_features[i], nums_features[i - 1])
         for i in range(1, num_layers + 1)
     ]
     trained_parameters = optimize(
-        parameters, training_X, training_Y, num_iterations, learning_rate
+        initial_parameters, training_x, training_y, num_iterations, learning_rate
     )
 
-    print("\nTrained parameters:")
-    print(trained_parameters)
-
-    # print("Training X:\n", training_X)
-    # print("Training Y:\n", training_Y)
-
-    predicted_training_Y = full_predict(trained_parameters, training_X)
+    predicted_training_Y = full_predict(trained_parameters, training_x)
     predicted_test_Y = full_predict(trained_parameters, test_X)
 
-    print(f"Training accuracy: {accuracy(predicted_training_Y, training_Y)}%")
+    print(f"\nTraining accuracy: {accuracy(predicted_training_Y, training_y)}%")
     print(f"Test accuracy: {accuracy(predicted_test_Y, test_Y)}%")
 
     return trained_parameters
@@ -139,24 +135,27 @@ def run():
         num_iterations = int(input("Input the number of learning rounds: "))
         alpha = float(input("Input the learning rate: "))
 
-    original_parameters = [randomized_parameters(1, n)]
+    original_parameters = [randomized_parameters(2, n), randomized_parameters(1, 2)]
 
-    x1, y1 = gen_random_input(n, m, original_parameters)
-    x2, y2 = gen_random_input(n, m, original_parameters)
+    x1, y1 = randomized_samples(n, m, original_parameters)
+    x2, y2 = randomized_samples(n, m, original_parameters)
+
+    print("\nOriginal parameters:")
+    print(original_parameters)
 
     print("\nGenerated x1 and y1:")
     print(x1)
     print(y1)
 
     trained_parameters = run_model(
-        training_X=x1,
-        training_Y=y1,
+        training_x=x1,
+        training_y=y1,
         test_X=x2,
         test_Y=y2,
-        nums_features=[1],
+        nums_features=[2, 1],
         num_iterations=num_iterations,
         learning_rate=alpha,
     )
 
-    print("\nOriginal parameters:")
-    print(original_parameters)
+    print("\nTrained parameters:")
+    print(trained_parameters)
