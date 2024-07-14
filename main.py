@@ -1,8 +1,9 @@
-import mymodel
+import kerastest
 
 
 def main():
-    mymodel.run()
+    kerastest.setup()
+    # mymodel.run()
 
 
 if __name__ == "__main__":
