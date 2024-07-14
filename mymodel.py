@@ -3,9 +3,9 @@ import numpy as np
 # Parameters of my model
 
 n = 3
-m = 1000
-t = 10000
-alpha = 1e-4
+m = 4
+num_iterations = int(1e4)
+alpha = 1e-1
 
 
 def accuracy(P, Q):
@@ -16,54 +16,113 @@ def sigmoid(z):
     return 1 / (1 + np.exp(-z))
 
 
-def initialize_with_zeros(dim: int):
-    w = np.zeros((dim, 1))
-    b = 0
+def gen_random_input(n, m, parameters):
+    x = np.random.uniform(-100, 100, size=(n, m))
+    x = x / np.linalg.norm(x, axis=0, keepdims=True)  # Normalizes x
+    y = full_predict(parameters, x)
+
+    return x, y
+
+
+def randomized_parameters(next_num_features: int, num_features: int):
+    w = np.random.uniform(size=(next_num_features, num_features)).T
+    b = np.random.uniform(size=(1, next_num_features))
     return w, b
 
 
-def propagate(w, b, X, Y):
-    m = X.shape[1]
-
-    A = sigmoid(w.T @ X + b)
-    cost = -1 / m * (Y * np.log(A) + (1 - Y) * np.log(1 - A)).sum()
-    dw = 1 / m * (X @ (A - Y).T)
-    db = 1 / m * (A - Y).sum()
-    grads = (dw, db)
-    return grads, cost
+def full_predict(parameters, x):
+    result = forward_propagate(parameters, x)[-1]
+    return result
 
 
-def optimize(w, b, X, Y, num_iteration, learning_rate):
-    for i in range(num_iteration):
-        grads, cost = propagate(w, b, X, Y)
-        dw, db = grads
+def predict(w, b, x):
+    result = sigmoid(w.T @ x + b)
+    return result
+
+
+def propagate(x, y, a):
+    m = x.shape[1]
+
+    cost = -1 / m * (y * np.log(a) + (1 - y) * np.log(1 - a)).sum()
+    dw = 1 / m * (x @ (a - y).T)
+    db = 1 / m * (a - y).sum()
+    gradients = (dw, db)
+    return gradients, cost
+
+
+def forward_propagate(parameters, x):
+    num_layers = len(parameters)
+    data = [x]
+    for j in range(num_layers):
+        w, b = parameters[j]
+        x = data[j]
+
+        a = predict(w, b, x)
+        data.append(a)
+    return data
+
+
+def back_propagate(parameters, data, x, y, learning_rate):
+    num_layers = len(parameters)
+    costs = []
+    for j in range(num_layers - 1, -1, -1):
+        w, b = parameters[j]
+        a = data[j + 1]
+
+        (dw, db), cost = propagate(x, y, a)
 
         w -= learning_rate * dw
         b -= learning_rate * db
-
-        if i % 500 == 0:
-            print(f"Cost after iteration {i}: {cost}")
-    return w, b
+        costs.append(cost)
+    return (parameters, list(reversed(costs)))
 
 
-def predict(w, b, X):
-    return np.round(sigmoid(w.T @ X + b))
+def optimize(parameters, x, y, num_iterations, learning_rate):
+    print()
+    for i in range(num_iterations):
+        data = forward_propagate(parameters, x)
+        parameters, costs = back_propagate(parameters, data, x, y, learning_rate)
+
+        peroid = num_iterations // 10
+        if i % peroid == 0:
+            print(f"Cost after iteration {i}: {costs[-1]}")
+            # print(f"dw: {dw.T}, db: {db}")
+
+    return parameters
 
 
-def model(training_X, training_Y, test_X, test_Y, num_iterations, learning_rate):
-    w, b = initialize_with_zeros(training_X.shape[0])
-    w, b = optimize(w, b, training_X, training_Y, num_iterations, learning_rate)
+def run_model(
+    training_X,
+    training_Y,
+    test_X,
+    test_Y,
+    nums_features: list,
+    num_iterations,
+    learning_rate,
+):
+    num_layers = len(nums_features)
+    nums_features.insert(0, training_X.shape[0])
+    parameters = [
+        randomized_parameters(nums_features[i], nums_features[i - 1])
+        for i in range(1, num_layers + 1)
+    ]
+    trained_parameters = optimize(
+        parameters, training_X, training_Y, num_iterations, learning_rate
+    )
+
+    print("\nTrained parameters:")
+    print(trained_parameters)
 
     # print("Training X:\n", training_X)
     # print("Training Y:\n", training_Y)
 
-    predicted_training_Y = predict(w, b, training_X)
-    predicted_test_Y = predict(w, b, test_X)
+    predicted_training_Y = full_predict(trained_parameters, training_X)
+    predicted_test_Y = full_predict(trained_parameters, test_X)
 
     print(f"Training accuracy: {accuracy(predicted_training_Y, training_Y)}%")
     print(f"Test accuracy: {accuracy(predicted_test_Y, test_Y)}%")
 
-    return w, b
+    return trained_parameters
 
 
 def run():
@@ -73,44 +132,31 @@ def run():
         else False
     )
 
-    global n, m, t, alpha
+    global n, m, num_iterations, alpha
     if not initialize_default:
         n = int(input("Input the dimension of the x: "))
         m = int(input("Input the number of examples: "))
-        t = int(input("Input the number of learning rounds: "))
+        num_iterations = int(input("Input the number of learning rounds: "))
         alpha = float(input("Input the learning rate: "))
 
-    w = np.random.uniform(-1, 1, size=(n, 1))
-    b = np.random.uniform(-1, 1)
+    original_parameters = [randomized_parameters(1, n)]
 
-    def gen_random_input(n, m):
-        x = np.random.uniform(low=-1, high=1, size=(n, m))
-        # x = x / np.linalg.norm(x, axis=0, keepdims=True)  # Normalizes x
-        y = sigmoid(w.T @ x + b)
-        y = np.round(y)
+    x1, y1 = gen_random_input(n, m, original_parameters)
+    x2, y2 = gen_random_input(n, m, original_parameters)
 
-        return x, y
-
-    x1, y1 = gen_random_input(n, m)
-    x2, y2 = gen_random_input(n, m)
-
-    print("Generated x1 and y1:\n")
+    print("\nGenerated x1 and y1:")
     print(x1)
     print(y1)
 
-    w, b = model(
+    trained_parameters = run_model(
         training_X=x1,
         training_Y=y1,
         test_X=x2,
         test_Y=y2,
-        num_iterations=t,
+        nums_features=[1],
+        num_iterations=num_iterations,
         learning_rate=alpha,
     )
 
-    print("Trained parameters:\n")
-    print(f"w\n{w}")
-    print(f"b\n{b}")
-
-    print()
-    print("Original w\n", w)
-    print("Original b\n", b)
+    print("\nOriginal parameters:")
+    print(original_parameters)
