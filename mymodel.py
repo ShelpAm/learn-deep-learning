@@ -43,7 +43,6 @@ def predict(w, b, x, activation: str):
         a = np.tanh(z)
     else:
         raise Exception("No such activation function")
-    a = np.round(a)
     return a
 
 

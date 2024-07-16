@@ -1,5 +1,5 @@
+import keras
 import tensorflow as tf
-import tensorflow.keras as keras
 
 import mymodel
 
@@ -20,18 +20,15 @@ def make_model(sample_shape):
     model = keras.Sequential(
         [
             keras.layers.Input(shape=sample_shape),
-            keras.layers.Dense(100, activation="relu"),
-            keras.layers.Dense(1000, activation="tanh"),
+            # keras.layers.Dense(100, activation="relu"),
+            # keras.layers.Dense(1000, activation="tanh"),
             keras.layers.Dense(1, activation="sigmoid"),
         ]
     )
 
     model.compile(
-        optimizer="sgd",
+        optimizer="nadam",
         loss=keras.losses.BinaryCrossentropy(),
-        metrics=[
-            keras.metrics.AUC(name="acc"),
-        ],
     )
 
     return model
@@ -41,7 +38,7 @@ def setup():
     # Load the data and split it between train and test sets
     # (train_x, train_y), (test_x, test_y) = get_example_data()
 
-    n = 5
+    n = 2
     params = mymodel.randomized_parameters(1, 1, n)
     train_x, train_y = mymodel.randomized_samples(n=n, m=100, parameters=params)
     test_x, test_y = mymodel.randomized_samples(n=n, m=5, parameters=params)
@@ -50,6 +47,7 @@ def setup():
     train_y = train_y.T
     test_x = test_x.T
     test_y = test_y.T
+    # test_y = tf.round(test_y)
 
     model = make_model((train_x.shape[1],))
     model.summary()
@@ -60,6 +58,7 @@ def setup():
         epochs=20,
     )
 
+    print("x: ", test_x)
     print("actual", test_y)
     print("prediction", model.predict(test_x).T)
 
