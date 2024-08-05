@@ -1,9 +1,12 @@
-import tftest
+# import tftest
+import kerastest
+import config
 
 
 def main():
-    tftest.run()
-    # kerastest.setup()
+    config.setup()
+    # tftest.run()
+    kerastest.setup()
     # mymodel.run()
 
 
