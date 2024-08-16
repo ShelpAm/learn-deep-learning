@@ -1,6 +1,6 @@
 # Notes about deep learning
 
-This is for memorizing some easy-to-forget stuffs in deep learning, helping you
+This is for remembering some easy-to-forget stuffs in deep learning, helping you
 quickly re-collect them.
 
 [TOC]
