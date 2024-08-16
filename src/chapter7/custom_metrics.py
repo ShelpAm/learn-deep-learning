@@ -14,8 +14,8 @@ from src.utils import make_mnist_dataset, make_mnist_model
 
 # It can do a RMSE on a vector, whereas keras.metrics.RootMeanSquaredError can not.
 class Root_mean_squared_error(metrics.Metric):
-    def __init__(self, name="rmse", **kwargs):
-        super().__init__(name, kwargs)
+    def __init__(self, name="root_mean_squared_error", **kwargs):
+        super().__init__(name=name, **kwargs)
         self._mse_sum = self.add_weight(
             initializer=initializers.Zeros(),
             name="mse_sum",

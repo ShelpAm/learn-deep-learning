@@ -105,7 +105,7 @@ def dog_cat_classification():
         inputs = layers.Input(shape=(180, 180, 3))
 
         x = data_augmentor(inputs)
-        x = layers.Rescaling(1.0 / 255)(x)
+        x = layers.Rescaling(1 / 255)(x)
         for i in range(5, 9):
             x = layers.Convolution2D(
                 filters=2**i, kernel_size=3, activation=activations.relu
