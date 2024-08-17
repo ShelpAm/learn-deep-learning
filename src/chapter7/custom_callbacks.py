@@ -27,11 +27,22 @@ class Loss_logger(callbacks.Callback):
 
 
 def main():
-    (train_x, train_y), _ = make_mnist_dataset()
+    (train_x, train_y), test_dataset = make_mnist_dataset()
     model = make_mnist_model()
     model.compile(
         optimizer=optimizers.RMSprop(),
         loss=losses.SparseCategoricalCrossentropy(),
         metrics=[metrics.SparseCategoricalAccuracy()],
     )
-    model.fit(train_x, train_y, epochs=3, callbacks=[Loss_logger()])
+    model.fit(
+        train_x,
+        train_y,
+        epochs=3,
+        callbacks=[
+            Loss_logger(),
+            callbacks.TensorBoard(
+                log_dir="bin/tensorboard.log",
+            ),
+        ],
+        validation_data=test_dataset,
+    )

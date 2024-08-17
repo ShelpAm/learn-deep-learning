@@ -46,4 +46,3 @@ def make_mnist_model():
 
     model = Model(inputs=inputs, outputs=outputs)
     return model
-
